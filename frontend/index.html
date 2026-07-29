@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StayWise AI - Travel Assistant</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-color: #0f1115;
+            --sidebar-bg: #16191f;
+            --chat-bg: #1a1d24;
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --user-msg: #2563eb;
+            --ai-msg: #1f232b;
+            --border: #2d313a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .new-chat-btn {
+            background-color: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+            margin-bottom: 2rem;
+        }
+
+        .new-chat-btn:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .sidebar h2 {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+            letter-spacing: 1px;
+        }
+
+        /* Main Chat Area */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--bg-color);
+            position: relative;
+        }
+
+        .header {
+            padding: 1rem 2rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: rgba(15, 17, 21, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 10;
+        }
+
+        .header h1 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            background: linear-gradient(to right, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            scroll-behavior: smooth;
+        }
+
+        .chat-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        .chat-container::-webkit-scrollbar-thumb {
+            background-color: var(--border);
+            border-radius: 3px;
+        }
+
+        .message {
+            display: flex;
+            gap: 1rem;
+            max-width: 80%;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+
+        .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .user .avatar {
+            background-color: var(--accent);
+        }
+
+        .ai .avatar {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+        }
+
+        .bubble {
+            padding: 1rem 1.2rem;
+            border-radius: 1rem;
+            line-height: 1.5;
+            font-size: 0.95rem;
+            position: relative;
+        }
+
+        .user .bubble {
+            background-color: var(--user-msg);
+            border-top-right-radius: 0.2rem;
+        }
+
+        .ai .bubble {
+            background-color: var(--ai-msg);
+            border-top-left-radius: 0.2rem;
+            border: 1px solid var(--border);
+        }
+
+        /* Input Area */
+        .input-container {
+            padding: 1.5rem 2rem;
+            background: linear-gradient(to top, var(--bg-color) 70%, transparent);
+        }
+
+        .input-box {
+            display: flex;
+            align-items: center;
+            background-color: var(--chat-bg);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 0.5rem 1rem;
+            max-width: 800px;
+            margin: 0 auto;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: border-color 0.3s ease;
+        }
+
+        .input-box:focus-within {
+            border-color: var(--accent);
+        }
+
+        .input-box input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-size: 1rem;
+            padding: 0.75rem;
+            outline: none;
+        }
+
+        .send-btn {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s, background-color 0.2s;
+        }
+
+        .send-btn:hover {
+            background-color: var(--accent-hover);
+            transform: scale(1.05);
+        }
+
+        .send-btn:active {
+            transform: scale(0.95);
+        }
+
+        .send-btn:disabled {
+            background-color: var(--border);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Code/JSON formatting (jarang dipakai sekarang, hanya jaga-jaga) */
+        pre {
+            background-color: #0d1117;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            margin-top: 0.5rem;
+            font-family: monospace;
+            font-size: 0.85rem;
+            border: 1px solid var(--border);
+        }
+
+        .bubble ul {
+            margin: 0.5rem 0 0.5rem 1.2rem;
+        }
+        .bubble li {
+            margin-bottom: 0.3rem;
+        }
+        .bubble strong {
+            color: #93c5fd;
+        }
+
+        /* Hotel result cards */
+        .hotel-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+            margin-top: 0.75rem;
+        }
+        .hotel-card {
+            background-color: #12151b;
+            border: 1px solid var(--border);
+            border-radius: 0.6rem;
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            transition: border-color 0.15s ease, transform 0.1s ease;
+            text-decoration: none;
+            display: block;
+        }
+        .hotel-card:hover {
+            border-color: #6b7280;
+            transform: translateY(-1px);
+        }
+        .hotel-card.best {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 1px var(--accent) inset;
+        }
+        .hotel-card.deal {
+            border-color: #f59e0b;
+        }
+        .hotel-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 0.5rem;
+        }
+        .hotel-card-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--text-primary, #e5e7eb);
+        }
+        .hotel-card-price {
+            font-weight: 600;
+            color: #4ade80;
+            white-space: nowrap;
+        }
+        .hotel-card-meta {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 0.2rem;
+        }
+        .hotel-card-maps-hint {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            margin-top: 0.35rem;
+            opacity: 0.7;
+        }
+        .best-badge {
+            display: inline-block;
+            font-size: 0.7rem;
+            background-color: var(--accent);
+            color: white;
+            padding: 0.1rem 0.5rem;
+            border-radius: 1rem;
+            margin-left: 0.4rem;
+        }
+        .deal-badge {
+            display: inline-block;
+            font-size: 0.7rem;
+            background-color: #f59e0b;
+            color: #1a1a1a;
+            padding: 0.1rem 0.5rem;
+            border-radius: 1rem;
+            margin-left: 0.4rem;
+        }
+
+        /* Itinerary day cards */
+        .itinerary-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+            margin-top: 0.75rem;
+        }
+        .itinerary-day-card {
+            background-color: #12151b;
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--accent);
+            border-radius: 0.6rem;
+            padding: 0.75rem 1rem;
+        }
+        .itinerary-day-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--accent);
+            margin-bottom: 0.4rem;
+        }
+        .itinerary-day-card ul {
+            margin: 0 0 0 1.1rem;
+            padding: 0;
+        }
+        .itinerary-day-card li {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.25rem;
+        }
+        
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 4px;
+        }
+        
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            background-color: var(--text-secondary);
+            border-radius: 50%;
+            animation: typingBounce 1.4s infinite ease-in-out both;
+        }
+        
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+        
+        @keyframes typingBounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <button class="new-chat-btn" onclick="location.reload()">
+            <i class="fa-solid fa-plus"></i> New Search
+        </button>
+        <h2>Recent</h2>
+        <!-- History could go here -->
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <h1>StayWise AI</h1>
+            <div style="font-size: 0.8rem; color: var(--text-secondary);">
+                <i class="fa-solid fa-hotel"></i> Travel Concierge
+            </div>
+        </div>
+
+        <div class="chat-container" id="chatContainer">
+            <div class="message ai">
+                <div class="avatar"><i class="fa-solid fa-robot"></i></div>
+                <div class="bubble">
+                    Halo! Saya adalah StayWise AI, asisten perjalanan pintar Anda. Ingin mencari hotel di mana hari ini? (Misal: "Cari hotel di Bali untuk minggu depan yang ada kolam renangnya dengan budget $100")<br><br>
+                    Saya juga bisa bantu susun rencana perjalanan — coba: "buatkan itinerary 3 hari di Jogja"
+                </div>
+            </div>
+        </div>
+
+        <div class="input-container">
+            <div class="input-box">
+                <input type="text" id="userInput" placeholder="Ketik pesan Anda di sini..." autocomplete="off">
+                <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "http://127.0.0.1:8000/api/v1/chat";
+        const chatContainer = document.getElementById('chatContainer');
+        const userInput = document.getElementById('userInput');
+        const sendBtn = document.getElementById('sendBtn');
+        // Diisi otomatis dari respons pertama server, lalu dikirim ulang di setiap
+        // pesan berikutnya supaya AI "ingat" percakapan sebelumnya (destinasi,
+        // budget, fasilitas yang sudah disebut). Sengaja disimpan di variabel biasa
+        // (bukan localStorage) - reset otomatis kalau halaman di-reload / "New Search".
+        let sessionId = null;
+
+        userInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Escape HTML lalu render markdown ringan (bold + bullet list) jadi HTML aman.
+        function renderMarkdownLite(text) {
+            const escapeHtml = (s) => s
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+
+            const lines = text.split('\n');
+            let html = '';
+            let inList = false;
+
+            for (const rawLine of lines) {
+                const line = rawLine.trim();
+                if (line.startsWith('- ') || line.startsWith('* ')) {
+                    if (!inList) { html += '<ul>'; inList = true; }
+                    html += `<li>${escapeHtml(line.slice(2)).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')}</li>`;
+                } else {
+                    if (inList) { html += '</ul>'; inList = false; }
+                    if (line === '') { html += '<br>'; }
+                    else { html += `<p style="margin:0.3rem 0;">${escapeHtml(line).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')}</p>`; }
+                }
+            }
+            if (inList) html += '</ul>';
+            return html;
+        }
+
+        function buildMapsUrl(hotel) {
+            // Kalau ada koordinat asli (data live), langsung ke titik itu di Maps.
+            // Kalau tidak (mis. data contoh/mock tanpa koordinat), fallback ke
+            // pencarian nama hotel di Google Maps.
+            if (hotel.latitude != null && hotel.longitude != null) {
+                return `https://www.google.com/maps/search/?api=1&query=${hotel.latitude},${hotel.longitude}`;
+            }
+            return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(hotel.name)}`;
+        }
+
+        function renderHotelCards(hotels, recommendedId) {
+            if (!hotels || hotels.length === 0) return '';
+            const cards = hotels.map(h => {
+                const isBest = h.id === recommendedId;
+                const isDeal = !!h.deal;
+                const amenities = (h.amenities || []).join(', ') || '-';
+                const vendorLine = (h.vendors && h.vendors.length)
+                    ? `<div class="hotel-card-meta">Perbandingan vendor: ${h.vendors.map(v => `${v.vendor} $${Math.round(v.price)}`).join(' • ')}</div>`
+                    : '';
+                const dealBadge = isDeal ? '<span class="deal-badge">🔥 Promo</span>' : '';
+                const dealLine = (isDeal && h.deal_description)
+                    ? `<div class="hotel-card-meta" style="color:#f59e0b;">${h.deal_description}</div>`
+                    : '';
+                const mapsUrl = buildMapsUrl(h);
+                return `
+                    <a class="hotel-card ${isBest ? 'best' : ''} ${isDeal ? 'deal' : ''}" href="${mapsUrl}" target="_blank" rel="noopener noreferrer">
+                        <div class="hotel-card-header">
+                            <span class="hotel-card-name">${h.name}${isBest ? '<span class="best-badge">Rekomendasi</span>' : ''}${dealBadge}</span>
+                            <span class="hotel-card-price">$${Number(h.price).toFixed(0)}/malam</span>
+                        </div>
+                        <div class="hotel-card-meta">
+                            ⭐ ${h.rating} &nbsp;•&nbsp; ${h.distance_km} km dari pusat ${h.amenities ? `&nbsp;•&nbsp; ${amenities}` : ''}
+                        </div>
+                        ${dealLine}
+                        ${vendorLine}
+                        <div class="hotel-card-maps-hint">📍 Klik untuk buka di Google Maps</div>
+                    </a>`;
+            }).join('');
+            return `<div class="hotel-cards">${cards}</div>`;
+        }
+
+        function renderItineraryCards(itinerary) {
+            if (!itinerary || itinerary.length === 0) return '';
+            const cards = itinerary.map(d => `
+                <div class="itinerary-day-card">
+                    <div class="itinerary-day-title">Hari ${d.day}: ${d.title}</div>
+                    <ul>
+                        ${(d.activities || []).map(a => `<li>${a}</li>`).join('')}
+                    </ul>
+                </div>`).join('');
+            return `<div class="itinerary-cards">${cards}</div>`;
+        }
+
+        function appendMessage(sender, text, hotels = [], recommendedId = null, itinerary = null) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+
+            const avatar = document.createElement('div');
+            avatar.className = 'avatar';
+            avatar.innerHTML = sender === 'user' ? '<i class="fa-solid fa-user"></i>' : '<i class="fa-solid fa-robot"></i>';
+
+            const bubble = document.createElement('div');
+            bubble.className = 'bubble';
+
+            if (sender === 'ai') {
+                bubble.innerHTML = renderMarkdownLite(text) + renderHotelCards(hotels, recommendedId) + renderItineraryCards(itinerary);
+            } else {
+                bubble.innerText = text;
+            }
+
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(bubble);
+            chatContainer.appendChild(messageDiv);
+
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function appendTypingIndicator() {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ai typing-message`;
+            messageDiv.id = 'typingIndicator';
+            
+            const avatar = document.createElement('div');
+            avatar.className = 'avatar';
+            avatar.innerHTML = '<i class="fa-solid fa-robot"></i>';
+
+            const bubble = document.createElement('div');
+            bubble.className = 'bubble';
+            bubble.innerHTML = `
+                <div class="typing-indicator">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+            `;
+
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(bubble);
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function removeTypingIndicator() {
+            const indicator = document.getElementById('typingIndicator');
+            if (indicator) indicator.remove();
+        }
+
+        async function sendMessage() {
+            const message = userInput.value.trim();
+            if (!message) return;
+
+            // Disable input while processing
+            userInput.value = '';
+            userInput.disabled = true;
+            sendBtn.disabled = true;
+
+            appendMessage('user', message);
+            appendTypingIndicator();
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message: message, session_id: sessionId })
+                });
+
+                removeTypingIndicator();
+
+                if (!response.ok) {
+                    throw new Error('Server error');
+                }
+
+                const data = await response.json();
+                sessionId = data.session_id || sessionId;
+                appendMessage('ai', data.response, data.hotels, data.recommended_hotel_id, data.itinerary);
+
+            } catch (error) {
+                removeTypingIndicator();
+                appendMessage('ai', 'Maaf, terjadi kesalahan saat terhubung ke server. Pastikan uvicorn berjalan dan GROQ_API_KEY sudah dikonfigurasi di file .env.');
+                console.error(error);
+            } finally {
+                userInput.disabled = false;
+                sendBtn.disabled = false;
+                userInput.focus();
+            }
+        }
+    </script>
+</body>
+</html>
